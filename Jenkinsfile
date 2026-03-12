@@ -15,7 +15,7 @@ pipeline {
                     docker.image('php:8.4-cli').inside('-u root') {
                         sh '''
                             apt-get update
-                            apt-get install -y git zip unzip curl
+                            apt-get install -y git zip unzip curl nodejs npm
 
                             # Install Composer
                             curl -sS https://getcomposer.org/installer -o composer-setup.php
@@ -25,12 +25,18 @@ pipeline {
                             # Install dependency Laravel
                             composer install --no-interaction --prefer-dist
 
-                            # Setup environment Laravel
+                            # Install frontend dependency
+                            npm install
+
+                            # Build Vite (fix error manifest.json)
+                            npm run build
+
+                            # Setup env jika belum ada
                             if [ ! -f .env ]; then
-                                cp .env.example .env
+                                cp .env.example .env || true
                             fi
 
-                            php artisan key:generate
+                            php artisan key:generate || true
                         '''
                     }
                 }
@@ -43,7 +49,8 @@ pipeline {
                     sh '''
                         ssh -o StrictHostKeyChecking=no root@172.23.1.152 "mkdir -p /root/prod_server"
 
-                        scp -o StrictHostKeyChecking=no -r ./* root@172.23.1.152:/root/prod_server/
+                        # copy semua file termasuk hidden file
+                        scp -o StrictHostKeyChecking=no -r . root@172.23.1.152:/root/prod_server
 
                         ssh -o StrictHostKeyChecking=no root@172.23.1.152 "
                             cd /root/prod_server
@@ -54,14 +61,16 @@ pipeline {
                                 -p 8001:8000 \
                                 -v /root/prod_server:/var/www/html \
                                 -w /var/www/html \
-                                php:8.4-cli php artisan serve --host=0.0.0.0
+                                php:8.4-cli php artisan serve --host=0.0.0.0 --port=8000
 
-                            docker exec laravel-online cp .env.example .env || true
-                            docker exec laravel-online php artisan key:generate
+                            docker exec laravel-online php artisan key:generate || true
+                            docker exec laravel-online php artisan config:clear || true
+                            docker exec laravel-online php artisan cache:clear || true
+
                             docker exec -u root laravel-online chmod -R 777 storage bootstrap/cache
                         "
 
-                        echo "Laravel running on port 8001"
+                        echo "Laravel running at http://localhost:8001"
                     '''
                 }
             }
