@@ -38,7 +38,7 @@ pipeline {
                     sh '''
                         ssh -o StrictHostKeyChecking=no root@172.27.12.115 "mkdir -p /root/prod_server"
                         scp -o StrictHostKeyChecking=no -r ./* root@172.27.12.115:/root/prod_server/
-                        ssh -o StrictHostKeyChecking=no root@masukan_ip_wsl "
+                        ssh -o StrictHostKeyChecking=no root@172.23.1.152 "
                             cd /root/prod_server
                             docker rm -f laravel-online || true
                             
