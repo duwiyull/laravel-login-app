@@ -3,12 +3,6 @@ pipeline {
 
     stages {
 
-        stage('Checkout Code') {
-            steps {
-                git 'https://github.com/duwiyull/laravel-login-app.git'
-            }
-        }
-
         stage('Install Dependency') {
             steps {
                 sh '''
@@ -39,21 +33,7 @@ pipeline {
                     sh '''
                     ssh -o StrictHostKeyChecking=no root@172.23.1.152 "mkdir -p /root/prod_server"
 
-                    scp -o StrictHostKeyChecking=no -r * root@172.23.1.152:/root/prod_server/
-
-                    ssh -o StrictHostKeyChecking=no root@172.23.1.152 "
-
-                        cd /root/prod_server
-
-                        docker rm -f laravel-app || true
-
-                        docker run -d --name laravel-app \
-                        -p 8001:8000 \
-                        -v /root/prod_server:/var/www/html \
-                        -w /var/www/html \
-                        php:8.4-cli php artisan serve --host=0.0.0.0
-
-                    "
+                    scp -o StrictHostKeyChecking=no -r . root@172.23.1.152:/root/prod_server/
                     '''
                 }
             }
