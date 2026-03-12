@@ -6,16 +6,9 @@ pipeline {
         stage('Install Dependency') {
             steps {
                 sh '''
-                docker run --rm \
-                -v ${WORKSPACE}:/app \
-                -w /app \
-                php:8.4-cli bash -c "
-                set -e
-                apt-get update
-                apt-get install -y curl zip unzip
+                php -v
 
                 curl -sS https://getcomposer.org/installer | php
-
                 php composer.phar install --no-interaction --prefer-dist
 
                 if [ ! -f .env ]; then
@@ -23,7 +16,6 @@ pipeline {
                 fi
 
                 php artisan key:generate
-                "
                 '''
             }
         }
@@ -34,7 +26,7 @@ pipeline {
                     sh '''
                     ssh -o StrictHostKeyChecking=no root@172.23.1.152 "mkdir -p /root/prod_server"
 
-                    scp -o StrictHostKeyChecking=no -r ${WORKSPACE}/* root@172.23.1.152:/root/prod_server/
+                    scp -o StrictHostKeyChecking=no -r * root@172.23.1.152:/root/prod_server/
                     '''
                 }
             }
